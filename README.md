@@ -96,6 +96,10 @@ its `profiles{}` block — including `conf/base.config`. A profile that sets onl
 `cpus` silently drops that process's `memory`, `scratch`, and everything else.
 Deployment profiles must restate every directive they need.
 
-**`max_cpus` / `max_memory` / `max_time` are pipeline-wide.** They feed every
-`check_max()` call, not just the process you had in mind. Setting `max_memory`
-below a process's request silently clamps it.
+**`max_cpus` / `max_memory` / `max_time` are pipeline-wide.** They feed
+`process.resourceLimits` (Nextflow >= 24.04, replaces the legacy `check_max()`
+helper), which clamps every process, not just the one you had in mind. Setting
+`max_memory` below a process's request silently clamps it. Declare
+`resourceLimits` once per `process { }` block using the raw values —
+`resourceLimits` applies the cap automatically, so directives like `memory` and
+`time` no longer need to be wrapped in `check_max()`.
