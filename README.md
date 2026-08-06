@@ -18,13 +18,31 @@ set `custom_config_version` to a branch or SHA in the launch params
 |---|---|---|
 | `nfcore_custom.config` | every pipeline | profile wrappers that pull `conf/*.config` |
 | `conf/<name>.config` | every pipeline, via the wrapper above | queue routing, genome maps |
-| `pipeline/<name>.config` | one pipeline only | that pipeline's deployment profiles |
+| `pipeline/<name>.config` | one pipeline only | a router mapping environment names to files |
+| `conf/pipeline/<repo>/<env>.config` | one pipeline, one environment | the actual deployment settings |
 
 `pipeline/<name>.config` is included directly by the pipeline's own
 `nextflow.config`, so it is never seen by any other pipeline. That is why
-`pipeline/bases2fastq_nf.config` and `pipeline/cells2stats_nf.config` can both
-define an `ElembioCloud` profile with different resources without colliding, and
-why profiles do not need an `EBC_<workflow>` prefix.
+`conf/pipeline/bases2fastq-nf/ElembioCloud.config` and
+`conf/pipeline/cells2stats-nf/ElembioCloud.config` can both define an
+`ElembioCloud` profile with different resources without colliding, and why
+profiles do not need an `EBC_<workflow>` prefix.
+
+Keep `pipeline/<name>.config` a router — environment names only, no settings:
+
+```groovy
+profiles {
+    ElembioCloud {
+        includeConfig "${params.custom_config_base}/conf/pipeline/bases2fastq-nf/ElembioCloud.config"
+    }
+}
+```
+
+The substance belongs one level down, in `conf/pipeline/<repo>/<env>.config`, so
+that environment-specific assumptions (instance families, queue names, credential
+paths) are visible in the path rather than buried in a file named after the
+pipeline. A nested `includeConfig` inside a profile is still covered by the
+pipeline's outer `try/catch`, so this adds no new unguarded failure surface.
 
 ## File names do not define profile names
 
